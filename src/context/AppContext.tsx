@@ -21,6 +21,8 @@ interface AppContextType {
   user: AuthUser;
   role: UserRole;
   setRole: (r: UserRole) => void;
+  isLoggedIn: boolean;
+  logout: () => void;
   students: Student[];
   addStudent: (s: Omit<Student, "id">) => void;
   updateStudent: (s: Student) => void;
@@ -32,6 +34,7 @@ interface AppContextType {
   classes: ClassRoom[];
   addClass: (c: Omit<ClassRoom, "id">) => void;
   updateClass: (c: ClassRoom) => void;
+  deleteClass: (id: string) => void;
   attendance: AttendanceRecord[];
   markAttendance: (records: Omit<AttendanceRecord, "id">[]) => void;
   exams: Exam[];
@@ -50,12 +53,24 @@ interface AppContextType {
   addCalendarEvent: (e: Omit<CalendarEvent, "id">) => void;
   notifications: Notification[];
   markNotificationRead: (id: string) => void;
+  markAllNotificationsRead: () => void;
+  generateStudentNumber: (classId: string, name: string) => string;
+  generateTeacherId: () => string;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
 
+function getAuthFromStorage(): { email: string; role: UserRole; name: string } | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = localStorage.getItem("sms_auth");
+    return stored ? JSON.parse(stored) : null;
+  } catch { return null; }
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [role, setRole] = useState<UserRole>(() => loadFromStorage("sms_role", "admin"));
+  const auth = getAuthFromStorage();
+  const [role, setRole] = useState<UserRole>(auth?.role || "admin");
   const [students, setStudents] = useState<Student[]>(() => loadFromStorage("sms_students", initialStudents));
   const [teachers, setTeachers] = useState<Teacher[]>(() => loadFromStorage("sms_teachers", initialTeachers));
   const [classes, setClasses] = useState<ClassRoom[]>(() => loadFromStorage("sms_classes", initialClasses));
@@ -67,9 +82,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>(() => loadFromStorage("sms_calendar", initialCalendarEvents));
   const [notifications, setNotifications] = useState<Notification[]>(() => loadFromStorage("sms_notifications", initialNotifications));
 
-  const user: AuthUser = { email: "Gmi@gmail.com", name: "Admin User", role };
+  const isLoggedIn = !!auth;
+  const user: AuthUser = { email: auth?.email || "", name: auth?.name || "Guest", role };
 
-  useEffect(() => { saveToStorage("sms_role", role); }, [role]);
+  const logout = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("sms_auth");
+      window.location.href = "/login";
+    }
+  };
+
   useEffect(() => { saveToStorage("sms_students", students); }, [students]);
   useEffect(() => { saveToStorage("sms_teachers", teachers); }, [teachers]);
   useEffect(() => { saveToStorage("sms_classes", classes); }, [classes]);
@@ -81,6 +103,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => { saveToStorage("sms_calendar", calendarEvents); }, [calendarEvents]);
   useEffect(() => { saveToStorage("sms_notifications", notifications); }, [notifications]);
 
+  const classCodeMap: Record<string, string> = {
+    "c-baby": "BABY", "c-1st": "1ST", "c-2nd": "2ND", "c-3rd": "3RD", "c-4th": "4TH",
+    "c-5th": "5TH", "c-6th": "6TH", "c-7th": "7TH", "c-8th": "8TH", "c-9th": "9TH",
+    "c-10th": "10TH", "c-1pu": "1PU", "c-2pu": "2PU",
+  };
+
+  const generateStudentNumber = (classId: string, name: string) => {
+    const cc = classCodeMap[classId] || classId.toUpperCase();
+    const nameCode = name.replace(/\s/g, "").substring(0, 3).toUpperCase();
+    const classStudents = students.filter(s => s.classId === classId);
+    const seq = classStudents.length + 1;
+    return `${cc}${nameCode}${String(seq).padStart(3, "0")}`;
+  };
+
+  const generateTeacherId = () => {
+    const seq = teachers.length + 1;
+    return `TEC${String(seq).padStart(3, "0")}`;
+  };
+
   const addStudent = (s: Omit<Student, "id">) => setStudents(p => [...p, { ...s, id: genId() }]);
   const updateStudent = (s: Student) => setStudents(p => p.map(x => x.id === s.id ? s : x));
   const deleteStudent = (id: string) => setStudents(p => p.filter(x => x.id !== id));
@@ -91,6 +132,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const addClass = (c: Omit<ClassRoom, "id">) => setClasses(p => [...p, { ...c, id: genId() }]);
   const updateClass = (c: ClassRoom) => setClasses(p => p.map(x => x.id === c.id ? c : x));
+  const deleteClass = (id: string) => setClasses(p => p.filter(x => x.id !== id));
 
   const markAttendance = (records: Omit<AttendanceRecord, "id">[]) => {
     const newRecords = records.map(r => ({ ...r, id: genId() }));
@@ -114,20 +156,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addCalendarEvent = (e: Omit<CalendarEvent, "id">) => setCalendarEvents(p => [...p, { ...e, id: genId() }]);
 
   const markNotificationRead = (id: string) => setNotifications(p => p.map(x => x.id === id ? { ...x, read: true } : x));
+  const markAllNotificationsRead = () => setNotifications(p => p.map(x => ({ ...x, read: true })));
 
   return (
     <AppContext.Provider value={{
-      user, role, setRole,
+      user, role, setRole, isLoggedIn, logout,
       students, addStudent, updateStudent, deleteStudent,
       teachers, addTeacher, updateTeacher, deleteTeacher,
-      classes, addClass, updateClass,
+      classes, addClass, updateClass, deleteClass,
       attendance, markAttendance,
       exams, addExam,
       results, addResult, updateResult,
       fees, addFee, updateFee,
       notices, addNotice, updateNotice, deleteNotice,
       calendarEvents, addCalendarEvent,
-      notifications, markNotificationRead,
+      notifications, markNotificationRead, markAllNotificationsRead,
+      generateStudentNumber, generateTeacherId,
     }}>
       {children}
     </AppContext.Provider>
