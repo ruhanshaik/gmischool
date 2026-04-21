@@ -19,7 +19,7 @@ function StudentsPage() {
   const [editStudent, setEditStudent] = useState<Student | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const [form, setForm] = useState({ name: "", email: "", phone: "", classId: "", rollNumber: "", gender: "Male" as const, dateOfBirth: "", address: "", parentName: "", parentPhone: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", classId: "", rollNumber: "", gender: "Male" as "Male" | "Female", dateOfBirth: "", address: "", parentName: "", parentPhone: "" });
 
   const filtered = students.filter(s => {
     const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) || s.email.toLowerCase().includes(search.toLowerCase());

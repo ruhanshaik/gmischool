@@ -15,7 +15,7 @@ function NoticesPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editNotice, setEditNotice] = useState<Notice | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [form, setForm] = useState({ title: "", content: "", author: "", priority: "Medium" as const });
+  const [form, setForm] = useState({ title: "", content: "", author: "", priority: "Medium" as "High" | "Medium" | "Low" });
 
   const openAdd = () => { setForm({ title: "", content: "", author: "", priority: "Medium" }); setEditNotice(null); setModalOpen(true); };
   const openEdit = (n: Notice) => { setForm({ title: n.title, content: n.content, author: n.author, priority: n.priority }); setEditNotice(n); setModalOpen(true); };
