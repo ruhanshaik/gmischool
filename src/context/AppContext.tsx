@@ -20,6 +20,7 @@ interface AppContextType {
   role: UserRole;
   setRole: (r: UserRole) => void;
   isLoggedIn: boolean;
+  login: (authUser: AuthUser) => void;
   logout: () => void;
   students: Student[];
   addStudent: (s: Omit<Student, "id">) => void;
@@ -58,7 +59,9 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | null>(null);
 
-function getAuthFromStorage(): { email: string; role: UserRole; name: string } | null {
+type StoredAuth = Pick<AuthUser, "email" | "role" | "name">;
+
+function getAuthFromStorage(): StoredAuth | null {
   try {
     const stored = localStorage.getItem("sms_auth");
     return stored ? JSON.parse(stored) : null;
@@ -66,8 +69,8 @@ function getAuthFromStorage(): { email: string; role: UserRole; name: string } |
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const auth = getAuthFromStorage();
-  const [role, setRole] = useState<UserRole>(auth?.role || "admin");
+  const [auth, setAuth] = useState<StoredAuth | null>(() => getAuthFromStorage());
+  const [role, setRoleState] = useState<UserRole>(() => auth?.role || "admin");
   const [students, setStudents] = useState<Student[]>(() => loadFromStorage("sms_students", initialStudents));
   const [teachers, setTeachers] = useState<Teacher[]>(() => loadFromStorage("sms_teachers", initialTeachers));
   const [classes, setClasses] = useState<ClassRoom[]>(() => loadFromStorage("sms_classes", initialClasses));
@@ -79,12 +82,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>(() => loadFromStorage("sms_calendar", initialCalendarEvents));
   const [notifications, setNotifications] = useState<Notification[]>(() => loadFromStorage("sms_notifications", initialNotifications));
 
-  const isLoggedIn = !!auth;
+  const isLoggedIn = auth !== null;
   const user: AuthUser = { email: auth?.email || "", name: auth?.name || "Guest", role };
+
+  const login = (authUser: AuthUser) => {
+    const nextAuth: StoredAuth = { email: authUser.email, role: authUser.role, name: authUser.name };
+    localStorage.setItem("sms_auth", JSON.stringify(nextAuth));
+    setAuth(nextAuth);
+    setRoleState(nextAuth.role);
+  };
+
+  const setRole = (r: UserRole) => {
+    setRoleState(r);
+    setAuth(prev => {
+      if (!prev) return prev;
+      const nextAuth = { ...prev, role: r };
+      localStorage.setItem("sms_auth", JSON.stringify(nextAuth));
+      return nextAuth;
+    });
+  };
 
   const logout = () => {
     localStorage.removeItem("sms_auth");
-    window.location.href = "/login";
+    setAuth(null);
   };
 
   useEffect(() => { saveToStorage("sms_students", students); }, [students]);
@@ -155,7 +175,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   return (
     <AppContext.Provider value={{
-      user, role, setRole, isLoggedIn, logout,
+      user, role, setRole, isLoggedIn, login, logout,
       students, addStudent, updateStudent, deleteStudent,
       teachers, addTeacher, updateTeacher, deleteTeacher,
       classes, addClass, updateClass, deleteClass,
