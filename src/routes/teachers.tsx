@@ -11,14 +11,16 @@ export const Route = createFileRoute("/teachers")({
 });
 
 function TeachersPage() {
-  const { teachers, classes, addTeacher, updateTeacher, deleteTeacher } = useApp();
+  const { teachers, classes, addTeacher, updateTeacher, deleteTeacher, generateTeacherId } = useApp();
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editTeacher, setEditTeacher] = useState<Teacher | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", email: "", phone: "", subject: "", qualification: "", salary: "0", classIds: [] as string[] });
 
-  const filtered = teachers.filter(t => t.name.toLowerCase().includes(search.toLowerCase()) || t.subject.toLowerCase().includes(search.toLowerCase()));
+  const filtered = teachers.filter(t => t.name.toLowerCase().includes(search.toLowerCase()) || t.subject.toLowerCase().includes(search.toLowerCase()) || t.id.toLowerCase().includes(search.toLowerCase()));
+
+  const previewId = !editTeacher ? generateTeacherId() : "";
 
   const openAdd = () => { setForm({ name: "", email: "", phone: "", subject: "", qualification: "", salary: "0", classIds: [] }); setEditTeacher(null); setModalOpen(true); };
 
@@ -39,9 +41,10 @@ function TeachersPage() {
     <DashboardLayout>
       <PageHeader title="Teacher Management" action={<PrimaryButton onClick={openAdd}><IconPlus className="w-4 h-4" /> Add Teacher</PrimaryButton>} />
       <div className="mb-4"><SearchInput value={search} onChange={setSearch} placeholder="Search teachers..." /></div>
-      <DataTable headers={["Name", "Subject", "Email", "Phone", "Classes", "Actions"]}>
+      <DataTable headers={["Teacher ID", "Name", "Subject", "Email", "Phone", "Classes", "Actions"]}>
         {filtered.map(t => (
           <tr key={t.id} className="hover:bg-muted/30 transition-colors">
+            <td className="px-4 py-3 text-muted-foreground whitespace-nowrap font-mono text-xs">{t.id.toUpperCase()}</td>
             <td className="px-4 py-3 font-medium text-foreground whitespace-nowrap">{t.name}</td>
             <td className="px-4 py-3 whitespace-nowrap"><Badge>{t.subject}</Badge></td>
             <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{t.email}</td>
@@ -61,6 +64,11 @@ function TeachersPage() {
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editTeacher ? "Edit Teacher" : "Add Teacher"}>
         <form onSubmit={e => { e.preventDefault(); handleSave(); }}>
+          {!editTeacher && previewId && (
+            <FormField label="Teacher ID (Auto)">
+              <div className="w-full rounded-lg border border-input bg-muted/50 px-3 py-2 text-sm text-foreground font-mono">{previewId}</div>
+            </FormField>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
             <FormField label="Full Name"><FormInput value={form.name} onChange={v => setForm(p => ({ ...p, name: v }))} required /></FormField>
             <FormField label="Email"><FormInput value={form.email} onChange={v => setForm(p => ({ ...p, email: v }))} type="email" required /></FormField>

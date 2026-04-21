@@ -13,9 +13,10 @@ const months = ["January", "February", "March", "April", "May", "June", "July", 
 
 function CalendarPage() {
   const { calendarEvents, addCalendarEvent, role } = useApp();
-  const [currentMonth, setCurrentMonth] = useState(3); // April
+  const [currentMonth, setCurrentMonth] = useState(3);
   const [currentYear] = useState(2026);
   const [modalOpen, setModalOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState("");
   const [form, setForm] = useState({ title: "", date: "", type: "Event" as const, description: "" });
 
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
@@ -34,6 +35,14 @@ function CalendarPage() {
       case "Meeting": return "default";
       default: return "default";
     }
+  };
+
+  const handleDayClick = (day: number) => {
+    if (role !== "admin") return;
+    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    setSelectedDate(dateStr);
+    setForm({ title: "", date: dateStr, type: "Event", description: "" });
+    setModalOpen(true);
   };
 
   const handleAdd = () => {
@@ -66,7 +75,7 @@ function CalendarPage() {
             const events = getEventsForDay(day);
             const isToday = day === 21 && currentMonth === 3;
             return (
-              <div key={day} className={`p-2 border-b border-r border-border min-h-[80px] ${isToday ? "bg-primary/5" : ""}`}>
+              <div key={day} onClick={() => handleDayClick(day)} className={`p-2 border-b border-r border-border min-h-[80px] ${isToday ? "bg-primary/5" : ""} ${role === "admin" ? "cursor-pointer hover:bg-accent/30" : ""}`}>
                 <span className={`text-xs font-medium ${isToday ? "text-primary" : "text-foreground"}`}>{day}</span>
                 <div className="mt-1 space-y-0.5">
                   {events.map(ev => (
@@ -81,7 +90,6 @@ function CalendarPage() {
         </div>
       </div>
 
-      {/* Upcoming Events List */}
       <div className="mt-6 bg-card rounded-xl border border-border p-5">
         <h3 className="text-sm font-semibold text-foreground mb-4">Upcoming Events</h3>
         <div className="space-y-3">
@@ -101,7 +109,7 @@ function CalendarPage() {
         </div>
       </div>
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Add Calendar Event">
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={selectedDate ? `Add Event - ${selectedDate}` : "Add Calendar Event"}>
         <form onSubmit={e => { e.preventDefault(); handleAdd(); }}>
           <FormField label="Title"><FormInput value={form.title} onChange={v => setForm(p => ({ ...p, title: v }))} required /></FormField>
           <FormField label="Date"><FormInput value={form.date} onChange={v => setForm(p => ({ ...p, date: v }))} type="date" required /></FormField>

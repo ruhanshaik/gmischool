@@ -11,7 +11,7 @@ export const Route = createFileRoute("/students")({
 });
 
 function StudentsPage() {
-  const { students, classes, addStudent, updateStudent, deleteStudent, role } = useApp();
+  const { students, classes, addStudent, updateStudent, deleteStudent, role, generateStudentNumber, addFee } = useApp();
   const [search, setSearch] = useState("");
   const [classFilter, setClassFilter] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
@@ -19,33 +19,49 @@ function StudentsPage() {
   const [editStudent, setEditStudent] = useState<Student | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const [form, setForm] = useState({ name: "", email: "", phone: "", classId: "", rollNumber: "", gender: "Male" as "Male" | "Female", dateOfBirth: "", address: "", parentName: "", parentPhone: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", classId: "", gender: "Male" as "Male" | "Female", dateOfBirth: "", address: "", parentName: "", parentPhone: "", fees: "25000" });
 
   const filtered = students.filter(s => {
-    const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) || s.email.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = s.name.toLowerCase().includes(search.toLowerCase()) || s.rollNumber.toLowerCase().includes(search.toLowerCase()) || s.email.toLowerCase().includes(search.toLowerCase());
     const matchClass = !classFilter || s.classId === classFilter;
     return matchSearch && matchClass;
   });
 
   const openAdd = () => {
-    setForm({ name: "", email: "", phone: "", classId: classes[0]?.id || "", rollNumber: "", gender: "Male", dateOfBirth: "", address: "", parentName: "", parentPhone: "" });
+    setForm({ name: "", email: "", phone: "", classId: classes[0]?.id || "", gender: "Male", dateOfBirth: "", address: "", parentName: "", parentPhone: "", fees: "25000" });
     setEditStudent(null);
     setModalOpen(true);
   };
 
   const openEdit = (s: Student) => {
-    setForm({ name: s.name, email: s.email, phone: s.phone, classId: s.classId, rollNumber: s.rollNumber, gender: s.gender, dateOfBirth: s.dateOfBirth, address: s.address, parentName: s.parentName, parentPhone: s.parentPhone });
+    setForm({ name: s.name, email: s.email, phone: s.phone, classId: s.classId, gender: s.gender, dateOfBirth: s.dateOfBirth, address: s.address, parentName: s.parentName, parentPhone: s.parentPhone, fees: String(s.fees) });
     setEditStudent(s);
     setModalOpen(true);
   };
+
+  // Auto-generate student number preview
+  const previewSN = form.name && form.classId && !editStudent ? generateStudentNumber(form.classId, form.name) : "";
 
   const handleSave = () => {
     const cls = classes.find(c => c.id === form.classId);
     const className = cls ? `${cls.name} - ${cls.section}` : "";
     if (editStudent) {
-      updateStudent({ ...editStudent, ...form, className });
+      updateStudent({ ...editStudent, ...form, className, fees: Number(form.fees) });
     } else {
-      addStudent({ ...form, className, admissionDate: new Date().toISOString().split("T")[0] });
+      const rollNumber = generateStudentNumber(form.classId, form.name);
+      addStudent({ ...form, className, rollNumber, fees: Number(form.fees), admissionDate: new Date().toISOString().split("T")[0] });
+      // Auto-create fee record
+      if (Number(form.fees) > 0) {
+        addFee({
+          studentId: "", // Will use the latest student
+          amount: Number(form.fees),
+          dueDate: new Date().toISOString().split("T")[0],
+          paidDate: null,
+          status: "Pending",
+          description: "Annual Tuition Fee",
+          paidAmount: 0,
+        });
+      }
     }
     setModalOpen(false);
   };
@@ -55,18 +71,18 @@ function StudentsPage() {
       <PageHeader title="Student Management" action={role === "admin" ? <PrimaryButton onClick={openAdd}><IconPlus className="w-4 h-4" /> Add Student</PrimaryButton> : undefined} />
 
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search students..." />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by name or student number..." />
         <select value={classFilter} onChange={e => setClassFilter(e.target.value)} className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
           <option value="">All Classes</option>
           {classes.map(c => <option key={c.id} value={c.id}>{c.name} - {c.section}</option>)}
         </select>
       </div>
 
-      <DataTable headers={["Name", "Roll No", "Class", "Gender", "Phone", "Actions"]}>
+      <DataTable headers={["Student No", "Name", "Class", "Gender", "Phone", "Actions"]}>
         {filtered.map(s => (
           <tr key={s.id} className="hover:bg-muted/30 transition-colors">
+            <td className="px-4 py-3 text-muted-foreground whitespace-nowrap font-mono text-xs">{s.rollNumber}</td>
             <td className="px-4 py-3 font-medium text-foreground whitespace-nowrap">{s.name}</td>
-            <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{s.rollNumber}</td>
             <td className="px-4 py-3 whitespace-nowrap"><Badge>{s.className}</Badge></td>
             <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{s.gender}</td>
             <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{s.phone}</td>
@@ -85,38 +101,42 @@ function StudentsPage() {
         ))}
       </DataTable>
 
-      {/* View Student Profile */}
       <Modal open={!!viewStudent} onClose={() => setViewStudent(null)} title="Student Profile" maxWidth="max-w-md">
         {viewStudent && (
           <div className="space-y-3 text-sm">
+            <Detail label="Student Number" value={viewStudent.rollNumber} />
             <Detail label="Name" value={viewStudent.name} />
             <Detail label="Email" value={viewStudent.email} />
             <Detail label="Phone" value={viewStudent.phone} />
             <Detail label="Class" value={viewStudent.className} />
-            <Detail label="Roll Number" value={viewStudent.rollNumber} />
             <Detail label="Gender" value={viewStudent.gender} />
             <Detail label="Date of Birth" value={viewStudent.dateOfBirth} />
             <Detail label="Address" value={viewStudent.address} />
             <Detail label="Parent Name" value={viewStudent.parentName} />
             <Detail label="Parent Phone" value={viewStudent.parentPhone} />
             <Detail label="Admission Date" value={viewStudent.admissionDate} />
+            <Detail label="Annual Fee" value={`${viewStudent.fees.toLocaleString()}`} />
           </div>
         )}
       </Modal>
 
-      {/* Add/Edit Modal */}
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editStudent ? "Edit Student" : "Add Student"}>
         <form onSubmit={e => { e.preventDefault(); handleSave(); }}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
             <FormField label="Full Name"><FormInput value={form.name} onChange={v => setForm(p => ({ ...p, name: v }))} required /></FormField>
+            <FormField label="Class"><FormSelect value={form.classId} onChange={v => setForm(p => ({ ...p, classId: v }))} options={classes.map(c => ({ value: c.id, label: `${c.name} - ${c.section}` }))} /></FormField>
+            {!editStudent && previewSN && (
+              <FormField label="Student Number (Auto)">
+                <div className="w-full rounded-lg border border-input bg-muted/50 px-3 py-2 text-sm text-foreground font-mono">{previewSN}</div>
+              </FormField>
+            )}
             <FormField label="Email"><FormInput value={form.email} onChange={v => setForm(p => ({ ...p, email: v }))} type="email" required /></FormField>
             <FormField label="Phone"><FormInput value={form.phone} onChange={v => setForm(p => ({ ...p, phone: v }))} required /></FormField>
-            <FormField label="Roll Number"><FormInput value={form.rollNumber} onChange={v => setForm(p => ({ ...p, rollNumber: v }))} required /></FormField>
-            <FormField label="Class"><FormSelect value={form.classId} onChange={v => setForm(p => ({ ...p, classId: v }))} options={classes.map(c => ({ value: c.id, label: `${c.name} - ${c.section}` }))} /></FormField>
             <FormField label="Gender"><FormSelect value={form.gender} onChange={v => setForm(p => ({ ...p, gender: v as "Male" | "Female" }))} options={[{ value: "Male", label: "Male" }, { value: "Female", label: "Female" }]} /></FormField>
             <FormField label="Date of Birth"><FormInput value={form.dateOfBirth} onChange={v => setForm(p => ({ ...p, dateOfBirth: v }))} type="date" /></FormField>
             <FormField label="Parent Name"><FormInput value={form.parentName} onChange={v => setForm(p => ({ ...p, parentName: v }))} /></FormField>
             <FormField label="Parent Phone"><FormInput value={form.parentPhone} onChange={v => setForm(p => ({ ...p, parentPhone: v }))} /></FormField>
+            <FormField label="Annual Fees"><FormInput value={form.fees} onChange={v => setForm(p => ({ ...p, fees: v }))} type="number" required /></FormField>
           </div>
           <FormField label="Address"><FormInput value={form.address} onChange={v => setForm(p => ({ ...p, address: v }))} /></FormField>
           <div className="flex justify-end gap-3 mt-4">

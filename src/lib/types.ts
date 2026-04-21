@@ -12,6 +12,7 @@ export interface Student {
   parentName: string;
   parentPhone: string;
   admissionDate: string;
+  fees: number;
 }
 
 export interface Teacher {
@@ -67,6 +68,7 @@ export interface FeeRecord {
   paidDate: string | null;
   status: "Paid" | "Pending" | "Overdue";
   description: string;
+  paidAmount: number;
 }
 
 export interface Notice {
