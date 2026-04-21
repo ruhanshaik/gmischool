@@ -12,9 +12,13 @@ export const Route = createFileRoute("/exams")({
 function ExamsPage() {
   const { exams, classes, students, results, addExam, addResult, updateResult, role } = useApp();
   const [examModal, setExamModal] = useState(false);
-  const [marksModal, setMarksModal] = useState<string | null>(null);
+  const [marksModal, setMarksModal] = useState(false);
   const [resultView, setResultView] = useState<string | null>(null);
   const [examForm, setExamForm] = useState({ name: "", classId: "", subject: "", date: "", totalMarks: "100" });
+
+  // Marks flow: select exam -> class -> students
+  const [selectedExamForMarks, setSelectedExamForMarks] = useState("");
+  const [selectedClassForMarks, setSelectedClassForMarks] = useState("");
 
   const openAddExam = () => {
     setExamForm({ name: "", classId: classes[0]?.id || "", subject: "", date: "", totalMarks: "100" });
@@ -26,15 +30,32 @@ function ExamsPage() {
     setExamModal(false);
   };
 
-  const exam = marksModal ? exams.find(e => e.id === marksModal) : null;
-  const examStudents = exam ? students.filter(s => s.classId === exam.classId) : [];
+  const openMarksModal = () => {
+    setSelectedExamForMarks("");
+    setSelectedClassForMarks("");
+    setMarksModal(true);
+  };
+
+  // Get unique exam names
+  const uniqueExamNames = [...new Set(exams.map(e => e.name))];
+  // Get classes for selected exam
+  const classesForExam = exams.filter(e => e.name === selectedExamForMarks).map(e => e.classId);
+  const classOptionsForMarks = classes.filter(c => classesForExam.includes(c.id));
+  // Get the specific exam for selected exam name + class
+  const selectedExam = exams.find(e => e.name === selectedExamForMarks && e.classId === selectedClassForMarks);
+  const examStudentsForMarks = selectedExam ? students.filter(s => s.classId === selectedExam.classId) : [];
 
   const resultExam = resultView ? exams.find(e => e.id === resultView) : null;
   const resultStudents = resultExam ? students.filter(s => s.classId === resultExam.classId) : [];
 
   return (
     <DashboardLayout>
-      <PageHeader title="Exams & Results" action={role === "admin" ? <PrimaryButton onClick={openAddExam}><IconPlus className="w-4 h-4" /> Create Exam</PrimaryButton> : undefined} />
+      <PageHeader title="Exams & Results" action={
+        <div className="flex gap-2">
+          {role === "admin" && <PrimaryButton onClick={openAddExam}><IconPlus className="w-4 h-4" /> Create Exam</PrimaryButton>}
+          <PrimaryButton onClick={openMarksModal}><IconPlus className="w-4 h-4" /> Add Marks</PrimaryButton>
+        </div>
+      } />
 
       <DataTable headers={["Exam Name", "Class", "Subject", "Date", "Total Marks", "Actions"]}>
         {exams.map(e => {
@@ -47,10 +68,7 @@ function ExamsPage() {
               <td className="px-4 py-3 text-muted-foreground">{e.date}</td>
               <td className="px-4 py-3 text-muted-foreground">{e.totalMarks}</td>
               <td className="px-4 py-3">
-                <div className="flex gap-1">
-                  <button onClick={() => setMarksModal(e.id)} className="px-2 py-1 text-xs rounded-md bg-primary/10 text-primary hover:bg-primary/20">Add Marks</button>
-                  <button onClick={() => setResultView(e.id)} className="px-2 py-1 text-xs rounded-md bg-success/10 text-success hover:bg-success/20">Results</button>
-                </div>
+                <button onClick={() => setResultView(e.id)} className="px-2 py-1 text-xs rounded-md bg-success/10 text-success hover:bg-success/20">View Results</button>
               </td>
             </tr>
           );
@@ -72,34 +90,42 @@ function ExamsPage() {
         </form>
       </Modal>
 
-      {/* Add Marks */}
-      <Modal open={!!marksModal} onClose={() => setMarksModal(null)} title={`Add Marks - ${exam?.name || ""}`} maxWidth="max-w-xl">
-        {exam && (
-          <MarksEntry exam={exam} students={examStudents} results={results} addResult={addResult} updateResult={updateResult} onClose={() => setMarksModal(null)} />
-        )}
+      {/* Add Marks - Step by step: Exam -> Class -> Students */}
+      <Modal open={marksModal} onClose={() => setMarksModal(false)} title="Add Marks" maxWidth="max-w-xl">
+        <div className="space-y-4">
+          <FormField label="Select Exam">
+            <FormSelect value={selectedExamForMarks} onChange={v => { setSelectedExamForMarks(v); setSelectedClassForMarks(""); }} options={[{ value: "", label: "-- Select Exam --" }, ...uniqueExamNames.map(n => ({ value: n, label: n }))]} />
+          </FormField>
+          {selectedExamForMarks && (
+            <FormField label="Select Class">
+              <FormSelect value={selectedClassForMarks} onChange={setSelectedClassForMarks} options={[{ value: "", label: "-- Select Class --" }, ...classOptionsForMarks.map(c => ({ value: c.id, label: `${c.name} - ${c.section}` }))]} />
+            </FormField>
+          )}
+          {selectedExam && examStudentsForMarks.length > 0 && (
+            <MarksEntry exam={selectedExam} students={examStudentsForMarks} results={results} addResult={addResult} updateResult={updateResult} onClose={() => setMarksModal(false)} />
+          )}
+        </div>
       </Modal>
 
       {/* View Results */}
       <Modal open={!!resultView} onClose={() => setResultView(null)} title={`Results - ${resultExam?.name || ""}`} maxWidth="max-w-xl">
         {resultExam && (
-          <div>
-            <DataTable headers={["Student", "Marks", "Percentage", "Grade"]}>
-              {resultStudents.map(s => {
-                const r = results.find(x => x.examId === resultExam.id && x.studentId === s.id);
-                if (!r) return null;
-                const pct = Math.round((r.marksObtained / resultExam.totalMarks) * 100);
-                const grade = pct >= 90 ? "A+" : pct >= 80 ? "A" : pct >= 70 ? "B" : pct >= 60 ? "C" : pct >= 50 ? "D" : "F";
-                return (
-                  <tr key={s.id}>
-                    <td className="px-4 py-2 text-foreground">{s.name}</td>
-                    <td className="px-4 py-2 text-muted-foreground">{r.marksObtained}/{resultExam.totalMarks}</td>
-                    <td className="px-4 py-2 text-muted-foreground">{pct}%</td>
-                    <td className="px-4 py-2"><Badge variant={pct >= 60 ? "success" : pct >= 40 ? "warning" : "destructive"}>{grade}</Badge></td>
-                  </tr>
-                );
-              })}
-            </DataTable>
-          </div>
+          <DataTable headers={["Student", "Marks", "Percentage", "Grade"]}>
+            {resultStudents.map(s => {
+              const r = results.find(x => x.examId === resultExam.id && x.studentId === s.id);
+              if (!r) return null;
+              const pct = Math.round((r.marksObtained / resultExam.totalMarks) * 100);
+              const grade = pct >= 90 ? "A+" : pct >= 80 ? "A" : pct >= 70 ? "B" : pct >= 60 ? "C" : pct >= 50 ? "D" : "F";
+              return (
+                <tr key={s.id}>
+                  <td className="px-4 py-2 text-foreground">{s.name}</td>
+                  <td className="px-4 py-2 text-muted-foreground">{r.marksObtained}/{resultExam.totalMarks}</td>
+                  <td className="px-4 py-2 text-muted-foreground">{pct}%</td>
+                  <td className="px-4 py-2"><Badge variant={pct >= 60 ? "success" : pct >= 40 ? "warning" : "destructive"}>{grade}</Badge></td>
+                </tr>
+              );
+            })}
+          </DataTable>
         )}
       </Modal>
     </DashboardLayout>
@@ -130,6 +156,7 @@ function MarksEntry({ exam, students: examStudents, results, addResult, updateRe
 
   return (
     <div>
+      <p className="text-sm text-muted-foreground mb-3">{exam.subject} - Total: {exam.totalMarks}</p>
       <div className="space-y-3 max-h-80 overflow-y-auto">
         {examStudents.map((s: any) => (
           <div key={s.id} className="flex items-center justify-between gap-3">
