@@ -1,15 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useApp } from "@/context/AppContext";
-import { PageHeader, SearchInput, DataTable, PrimaryButton, Modal, FormField, FormInput, FormSelect, StatCard, Badge } from "@/components/ui-components";
+import { PageHeader, DataTable, PrimaryButton, Modal, FormField, FormInput, FormSelect, StatCard, Badge } from "@/components/ui-components";
 import { IconPlus } from "@/components/icons";
 
-export const Route = createFileRoute("/fees")({
-  component: FeesPage,
-});
-
-function FeesPage() {
+export default function FeesPage() {
   const { fees, students, addFee, updateFee } = useApp();
   const [modalOpen, setModalOpen] = useState(false);
   const [collectModal, setCollectModal] = useState(false);
@@ -34,7 +29,6 @@ function FeesPage() {
     if (fee) updateFee({ ...fee, status: "Paid", paidDate: new Date().toISOString().split("T")[0], paidAmount: fee.amount });
   };
 
-  // Search student by student number
   const handleSearch = () => {
     const student = students.find(s => s.rollNumber.toLowerCase() === searchSN.toLowerCase());
     if (student) {
@@ -47,7 +41,6 @@ function FeesPage() {
     }
   };
 
-  // Collect fees
   const openCollect = (studentId: string) => {
     setCollectForm({ studentId, collectAmount: "" });
     setCollectModal(true);
@@ -67,7 +60,6 @@ function FeesPage() {
       remaining -= paying;
     }
     setCollectModal(false);
-    // Refresh search
     if (searchResult) {
       setTimeout(() => handleSearch(), 100);
     }
@@ -83,7 +75,6 @@ function FeesPage() {
         <StatCard label="Overdue" value={`${(totalOverdue / 1000).toFixed(0)}K`} color="destructive" />
       </div>
 
-      {/* Search by student number */}
       <div className="bg-card rounded-xl border border-border p-5 mb-6">
         <h3 className="text-sm font-semibold text-foreground mb-3">Search Student Fees</h3>
         <div className="flex gap-3 mb-4">

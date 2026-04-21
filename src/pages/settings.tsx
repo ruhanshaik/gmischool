@@ -1,14 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useApp } from "@/context/AppContext";
 import { PageHeader, PrimaryButton, FormField, FormInput } from "@/components/ui-components";
 
-export const Route = createFileRoute("/settings")({
-  component: SettingsPage,
-});
-
-function SettingsPage() {
+export default function SettingsPage() {
   const { user } = useApp();
   const [form, setForm] = useState({ name: user.name, email: user.email, phone: "9876000000", address: "St. Jude's Academy, Mumbai" });
   const [pwForm, setPwForm] = useState({ current: "", newPw: "", confirm: "" });
@@ -23,7 +18,6 @@ function SettingsPage() {
       <PageHeader title="Settings" />
 
       <div className="max-w-2xl space-y-6">
-        {/* Profile */}
         <div className="bg-card rounded-xl border border-border p-6">
           <h3 className="text-base font-semibold text-foreground mb-4">Profile Information</h3>
           <div className="flex items-center gap-4 mb-6">
@@ -48,7 +42,6 @@ function SettingsPage() {
           </form>
         </div>
 
-        {/* Change Password */}
         <div className="bg-card rounded-xl border border-border p-6">
           <h3 className="text-base font-semibold text-foreground mb-4">Change Password</h3>
           <form onSubmit={handlePwSave}>
@@ -62,7 +55,6 @@ function SettingsPage() {
           </form>
         </div>
 
-        {/* School Info */}
         <div className="bg-card rounded-xl border border-border p-6">
           <h3 className="text-base font-semibold text-foreground mb-4">School Information</h3>
           <div className="space-y-3 text-sm">

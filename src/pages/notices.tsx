@@ -1,4 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useApp } from "@/context/AppContext";
@@ -6,11 +5,7 @@ import { PageHeader, PrimaryButton, Modal, FormField, FormInput, FormSelect, For
 import { IconPlus, IconEdit, IconTrash } from "@/components/icons";
 import type { Notice } from "@/lib/types";
 
-export const Route = createFileRoute("/notices")({
-  component: NoticesPage,
-});
-
-function NoticesPage() {
+export default function NoticesPage() {
   const { notices, addNotice, updateNotice, deleteNotice, role } = useApp();
   const [modalOpen, setModalOpen] = useState(false);
   const [editNotice, setEditNotice] = useState<Notice | null>(null);

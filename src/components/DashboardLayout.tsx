@@ -1,5 +1,5 @@
 import { useState, useEffect, type ReactNode } from "react";
-import { Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useApp } from "@/context/AppContext";
 import { IconDashboard, IconStudents, IconTeacher, IconClass, IconAttendance, IconExam, IconFees, IconNotice, IconCalendar, IconSettings, IconMenu, IconClose, IconBell, IconChevronDown } from "@/components/icons";
 
@@ -32,8 +32,8 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isLoggedIn && typeof window !== "undefined") {
-      navigate({ to: "/login" });
+    if (!isLoggedIn) {
+      navigate("/login");
     }
   }, [isLoggedIn, navigate]);
 

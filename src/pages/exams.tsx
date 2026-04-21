@@ -1,22 +1,16 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useApp } from "@/context/AppContext";
 import { PageHeader, DataTable, PrimaryButton, Modal, FormField, FormInput, FormSelect, Badge } from "@/components/ui-components";
 import { IconPlus } from "@/components/icons";
 
-export const Route = createFileRoute("/exams")({
-  component: ExamsPage,
-});
-
-function ExamsPage() {
+export default function ExamsPage() {
   const { exams, classes, students, results, addExam, addResult, updateResult, role } = useApp();
   const [examModal, setExamModal] = useState(false);
   const [marksModal, setMarksModal] = useState(false);
   const [resultView, setResultView] = useState<string | null>(null);
   const [examForm, setExamForm] = useState({ name: "", classId: "", subject: "", date: "", totalMarks: "100" });
 
-  // Marks flow: select exam -> class -> students
   const [selectedExamForMarks, setSelectedExamForMarks] = useState("");
   const [selectedClassForMarks, setSelectedClassForMarks] = useState("");
 
@@ -36,12 +30,9 @@ function ExamsPage() {
     setMarksModal(true);
   };
 
-  // Get unique exam names
   const uniqueExamNames = [...new Set(exams.map(e => e.name))];
-  // Get classes for selected exam
   const classesForExam = exams.filter(e => e.name === selectedExamForMarks).map(e => e.classId);
   const classOptionsForMarks = classes.filter(c => classesForExam.includes(c.id));
-  // Get the specific exam for selected exam name + class
   const selectedExam = exams.find(e => e.name === selectedExamForMarks && e.classId === selectedClassForMarks);
   const examStudentsForMarks = selectedExam ? students.filter(s => s.classId === selectedExam.classId) : [];
 
@@ -75,7 +66,6 @@ function ExamsPage() {
         })}
       </DataTable>
 
-      {/* Create Exam */}
       <Modal open={examModal} onClose={() => setExamModal(false)} title="Create Exam">
         <form onSubmit={e => { e.preventDefault(); handleAddExam(); }}>
           <FormField label="Exam Name"><FormInput value={examForm.name} onChange={v => setExamForm(p => ({ ...p, name: v }))} required placeholder="e.g. Mid-Term Examination" /></FormField>
@@ -90,7 +80,6 @@ function ExamsPage() {
         </form>
       </Modal>
 
-      {/* Add Marks - Step by step: Exam -> Class -> Students */}
       <Modal open={marksModal} onClose={() => setMarksModal(false)} title="Add Marks" maxWidth="max-w-xl">
         <div className="space-y-4">
           <FormField label="Select Exam">
@@ -107,7 +96,6 @@ function ExamsPage() {
         </div>
       </Modal>
 
-      {/* View Results */}
       <Modal open={!!resultView} onClose={() => setResultView(null)} title={`Results - ${resultExam?.name || ""}`} maxWidth="max-w-xl">
         {resultExam && (
           <DataTable headers={["Student", "Marks", "Percentage", "Grade"]}>

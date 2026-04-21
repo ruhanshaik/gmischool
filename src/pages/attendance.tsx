@@ -1,14 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useApp } from "@/context/AppContext";
 import { PageHeader, DataTable, PrimaryButton, FormSelect, Badge } from "@/components/ui-components";
 
-export const Route = createFileRoute("/attendance")({
-  component: AttendancePage,
-});
-
-function AttendancePage() {
+export default function AttendancePage() {
   const { students, classes, attendance, markAttendance } = useApp();
   const [selectedClass, setSelectedClass] = useState(classes[0]?.id || "");
   const [selectedDate, setSelectedDate] = useState("2026-04-21");
@@ -37,7 +32,6 @@ function AttendancePage() {
     setTimeout(() => setSaved(false), 2000);
   };
 
-  // Report data
   const reportDates = [...new Set(attendance.filter(a => a.classId === selectedClass).map(a => a.date))].sort().reverse().slice(0, 7);
 
   return (

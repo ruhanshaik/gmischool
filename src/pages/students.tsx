@@ -1,4 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useApp } from "@/context/AppContext";
@@ -6,11 +5,7 @@ import { PageHeader, SearchInput, DataTable, PrimaryButton, Modal, FormField, Fo
 import { IconPlus, IconEdit, IconTrash, IconEye } from "@/components/icons";
 import type { Student } from "@/lib/types";
 
-export const Route = createFileRoute("/students")({
-  component: StudentsPage,
-});
-
-function StudentsPage() {
+export default function StudentsPage() {
   const { students, classes, addStudent, updateStudent, deleteStudent, role, generateStudentNumber, addFee } = useApp();
   const [search, setSearch] = useState("");
   const [classFilter, setClassFilter] = useState("");
@@ -39,7 +34,6 @@ function StudentsPage() {
     setModalOpen(true);
   };
 
-  // Auto-generate student number preview
   const previewSN = form.name && form.classId && !editStudent ? generateStudentNumber(form.classId, form.name) : "";
 
   const handleSave = () => {
@@ -50,10 +44,9 @@ function StudentsPage() {
     } else {
       const rollNumber = generateStudentNumber(form.classId, form.name);
       addStudent({ ...form, className, rollNumber, fees: Number(form.fees), admissionDate: new Date().toISOString().split("T")[0] });
-      // Auto-create fee record
       if (Number(form.fees) > 0) {
         addFee({
-          studentId: "", // Will use the latest student
+          studentId: "",
           amount: Number(form.fees),
           dueDate: new Date().toISOString().split("T")[0],
           paidDate: null,

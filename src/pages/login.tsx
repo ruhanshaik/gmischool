@@ -1,11 +1,7 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-export const Route = createFileRoute("/login")({
-  component: LoginPage,
-});
-
-function LoginPage() {
+export default function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,15 +11,11 @@ function LoginPage() {
     e.preventDefault();
     setError("");
     if (email === "Admin@gmail.com" && password === "GMI@0312") {
-      if (typeof window !== "undefined") {
-        localStorage.setItem("sms_auth", JSON.stringify({ email, role: "admin", name: "Admin User" }));
-      }
-      navigate({ to: "/" });
+      localStorage.setItem("sms_auth", JSON.stringify({ email, role: "admin", name: "Admin User" }));
+      navigate("/");
     } else if (email === "Teacher@gmail.com" && password === "GMI@0312") {
-      if (typeof window !== "undefined") {
-        localStorage.setItem("sms_auth", JSON.stringify({ email, role: "teacher", name: "Mr. Harrison" }));
-      }
-      navigate({ to: "/" });
+      localStorage.setItem("sms_auth", JSON.stringify({ email, role: "teacher", name: "Mr. Harrison" }));
+      navigate("/");
     } else {
       setError("Invalid email or password");
     }

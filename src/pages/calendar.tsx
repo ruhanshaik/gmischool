@@ -1,17 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useApp } from "@/context/AppContext";
 import { PageHeader, PrimaryButton, Modal, FormField, FormInput, FormSelect, Badge } from "@/components/ui-components";
 import { IconPlus } from "@/components/icons";
 
-export const Route = createFileRoute("/calendar")({
-  component: CalendarPage,
-});
-
 const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-function CalendarPage() {
+export default function CalendarPage() {
   const { calendarEvents, addCalendarEvent, role } = useApp();
   const [currentMonth, setCurrentMonth] = useState(3);
   const [currentYear] = useState(2026);

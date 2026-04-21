@@ -1,4 +1,3 @@
-import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useApp } from "@/context/AppContext";
@@ -6,11 +5,7 @@ import { PageHeader, DataTable, PrimaryButton, Modal, FormField, FormInput, Form
 import { IconPlus, IconEdit, IconTrash } from "@/components/icons";
 import type { ClassRoom } from "@/lib/types";
 
-export const Route = createFileRoute("/classes")({
-  component: ClassesPage,
-});
-
-function ClassesPage() {
+export default function ClassesPage() {
   const { classes, teachers, students, addClass, updateClass, deleteClass, role } = useApp();
   const [modalOpen, setModalOpen] = useState(false);
   const [editClass, setEditClass] = useState<ClassRoom | null>(null);

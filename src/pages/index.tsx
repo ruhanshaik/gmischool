@@ -1,13 +1,9 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useApp } from "@/context/AppContext";
 import { StatCard } from "@/components/ui-components";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-
-export const Route = createFileRoute("/")({
-  component: DashboardPage,
-});
 
 const attendanceData = [
   { day: "Mon", present: 92, absent: 8 },
@@ -24,14 +20,12 @@ const feesData = [
   { month: "Apr", collected: 165000, pending: 60000 },
 ];
 
-function DashboardPage() {
+export default function DashboardPage() {
   const { students, teachers, fees, attendance, role, isLoggedIn } = useApp();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isLoggedIn && typeof window !== "undefined") {
-      navigate({ to: "/login" });
-    }
+    if (!isLoggedIn) navigate("/login");
   }, [isLoggedIn, navigate]);
 
   const totalRevenue = fees.filter(f => f.status === "Paid").reduce((sum, f) => sum + f.paidAmount, 0);
