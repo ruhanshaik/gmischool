@@ -1,5 +1,5 @@
-import { useState, useEffect, type ReactNode } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useState, type ReactNode } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { useApp } from "@/context/AppContext";
 import { IconDashboard, IconStudents, IconTeacher, IconClass, IconAttendance, IconExam, IconFees, IconNotice, IconCalendar, IconSettings, IconMenu, IconClose, IconBell, IconChevronDown } from "@/components/icons";
 
@@ -27,15 +27,8 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const { user, role, isLoggedIn, logout, notifications, markNotificationRead, markAllNotificationsRead } = useApp();
+  const { user, role, logout, notifications, markNotificationRead, markAllNotificationsRead } = useApp();
   const location = useLocation();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!isLoggedIn) {
-      navigate("/login");
-    }
-  }, [isLoggedIn, navigate]);
 
   const unreadCount = notifications.filter(n => !n.read).length;
   const filteredNav = navItems.filter(item => !item.adminOnly || role === "admin");
