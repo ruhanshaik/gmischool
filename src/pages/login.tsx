@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useApp } from "@/context/AppContext";
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { login } = useApp();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -11,10 +13,10 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     if (email === "Admin@gmail.com" && password === "GMI@0312") {
-      localStorage.setItem("sms_auth", JSON.stringify({ email, role: "admin", name: "Admin User" }));
+      login({ email, role: "admin", name: "Admin User" });
       navigate("/");
     } else if (email === "Teacher@gmail.com" && password === "GMI@0312") {
-      localStorage.setItem("sms_auth", JSON.stringify({ email, role: "teacher", name: "Mr. Harrison" }));
+      login({ email, role: "teacher", name: "Mr. Harrison" });
       navigate("/");
     } else {
       setError("Invalid email or password");

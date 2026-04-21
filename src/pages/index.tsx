@@ -1,5 +1,3 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useApp } from "@/context/AppContext";
 import { StatCard } from "@/components/ui-components";
@@ -21,12 +19,7 @@ const feesData = [
 ];
 
 export default function DashboardPage() {
-  const { students, teachers, fees, attendance, role, isLoggedIn } = useApp();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!isLoggedIn) navigate("/login");
-  }, [isLoggedIn, navigate]);
+  const { students, teachers, fees, attendance, role } = useApp();
 
   const totalRevenue = fees.filter(f => f.status === "Paid").reduce((sum, f) => sum + f.paidAmount, 0);
   const pendingFees = fees.reduce((sum, f) => sum + (f.amount - f.paidAmount), 0);

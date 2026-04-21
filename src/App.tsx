@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "@/pages/login";
 import DashboardPage from "@/pages/index";
 import StudentsPage from "@/pages/students";
@@ -10,21 +10,33 @@ import FeesPage from "@/pages/fees";
 import NoticesPage from "@/pages/notices";
 import CalendarPage from "@/pages/calendar";
 import SettingsPage from "@/pages/settings";
+import { useApp } from "@/context/AppContext";
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { isLoggedIn } = useApp();
+  return isLoggedIn ? children : <Navigate to="/login" replace />;
+}
+
+function LoginRoute() {
+  const { isLoggedIn } = useApp();
+  return isLoggedIn ? <Navigate to="/" replace /> : <LoginPage />;
+}
 
 export function App() {
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/" element={<DashboardPage />} />
-      <Route path="/students" element={<StudentsPage />} />
-      <Route path="/teachers" element={<TeachersPage />} />
-      <Route path="/classes" element={<ClassesPage />} />
-      <Route path="/attendance" element={<AttendancePage />} />
-      <Route path="/exams" element={<ExamsPage />} />
-      <Route path="/fees" element={<FeesPage />} />
-      <Route path="/notices" element={<NoticesPage />} />
-      <Route path="/calendar" element={<CalendarPage />} />
-      <Route path="/settings" element={<SettingsPage />} />
+      <Route path="/login" element={<LoginRoute />} />
+      <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+      <Route path="/students" element={<ProtectedRoute><StudentsPage /></ProtectedRoute>} />
+      <Route path="/teachers" element={<ProtectedRoute><TeachersPage /></ProtectedRoute>} />
+      <Route path="/classes" element={<ProtectedRoute><ClassesPage /></ProtectedRoute>} />
+      <Route path="/attendance" element={<ProtectedRoute><AttendancePage /></ProtectedRoute>} />
+      <Route path="/exams" element={<ProtectedRoute><ExamsPage /></ProtectedRoute>} />
+      <Route path="/fees" element={<ProtectedRoute><FeesPage /></ProtectedRoute>} />
+      <Route path="/notices" element={<ProtectedRoute><NoticesPage /></ProtectedRoute>} />
+      <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
