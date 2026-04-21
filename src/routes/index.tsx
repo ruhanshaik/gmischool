@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useApp } from "@/context/AppContext";
 import { StatCard } from "@/components/ui-components";
@@ -24,10 +25,17 @@ const feesData = [
 ];
 
 function DashboardPage() {
-  const { students, teachers, fees, attendance, role } = useApp();
+  const { students, teachers, fees, attendance, role, isLoggedIn } = useApp();
+  const navigate = useNavigate();
 
-  const totalRevenue = fees.filter(f => f.status === "Paid").reduce((sum, f) => sum + f.amount, 0);
-  const pendingFees = fees.filter(f => f.status !== "Paid").reduce((sum, f) => sum + f.amount, 0);
+  useEffect(() => {
+    if (!isLoggedIn && typeof window !== "undefined") {
+      navigate({ to: "/login" });
+    }
+  }, [isLoggedIn, navigate]);
+
+  const totalRevenue = fees.filter(f => f.status === "Paid").reduce((sum, f) => sum + f.paidAmount, 0);
+  const pendingFees = fees.reduce((sum, f) => sum + (f.amount - f.paidAmount), 0);
   const todayAttendance = attendance.filter(a => a.date === "2026-04-21");
   const presentToday = todayAttendance.filter(a => a.status === "Present").length;
   const totalToday = todayAttendance.length || 1;
@@ -42,14 +50,13 @@ function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Total Students" value={students.length} sub={`${students.filter(s => s.classId.startsWith("c")).length} active`} color="primary" />
+          <StatCard label="Total Students" value={students.length} sub={`${students.length} active`} color="primary" />
           <StatCard label="Total Teachers" value={teachers.length} sub={`${teachers.length} active`} color="info" />
           {role === "admin" && <StatCard label="Total Revenue" value={`${(totalRevenue / 1000).toFixed(0)}K`} sub={`${(pendingFees / 1000).toFixed(0)}K pending`} color="success" />}
           <StatCard label="Attendance Rate" value={`${attendanceRate}%`} sub="Today" color="warning" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Attendance Trends */}
           <div className="bg-card rounded-xl border border-border p-5">
             <h3 className="text-sm font-semibold text-foreground mb-4">Attendance Trends (This Week)</h3>
             <ResponsiveContainer width="100%" height={240}>
@@ -64,7 +71,6 @@ function DashboardPage() {
             </ResponsiveContainer>
           </div>
 
-          {/* Fee Collection */}
           {role === "admin" && (
             <div className="bg-card rounded-xl border border-border p-5">
               <h3 className="text-sm font-semibold text-foreground mb-4">Fees Collection (Monthly)</h3>
@@ -82,13 +88,12 @@ function DashboardPage() {
           )}
         </div>
 
-        {/* Recent Activity */}
         <div className="bg-card rounded-xl border border-border p-5">
           <h3 className="text-sm font-semibold text-foreground mb-4">Recent Activity</h3>
           <div className="space-y-3">
-            <ActivityItem text="Aarav Sharma marked present in Grade 10-A" time="Today, 9:05 AM" />
+            <ActivityItem text="Aarav Sharma marked present in 10th Std-A" time="Today, 9:05 AM" />
             <ActivityItem text="Fee payment of 25,000 received from Priya Mehta" time="Today, 8:30 AM" />
-            <ActivityItem text="Mid-Term results published for Grade 10" time="Yesterday, 4:15 PM" />
+            <ActivityItem text="Mid-Term results published for 10th Std" time="Yesterday, 4:15 PM" />
             <ActivityItem text="New notice: Annual Sports Day posted" time="Apr 18, 2026" />
             <ActivityItem text="Parent-Teacher Meeting scheduled" time="Apr 15, 2026" />
           </div>
