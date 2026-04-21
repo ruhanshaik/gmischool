@@ -3,7 +3,6 @@ import type { Student, Teacher, ClassRoom, AttendanceRecord, Exam, ExamResult, F
 import { initialStudents, initialTeachers, initialClasses, initialAttendance, initialExams, initialResults, initialFees, initialNotices, initialCalendarEvents, initialNotifications } from "@/lib/mock-data";
 
 function loadFromStorage<T>(key: string, fallback: T): T {
-  if (typeof window === "undefined") return fallback;
   try {
     const stored = localStorage.getItem(key);
     return stored ? JSON.parse(stored) : fallback;
@@ -11,7 +10,6 @@ function loadFromStorage<T>(key: string, fallback: T): T {
 }
 
 function saveToStorage(key: string, data: unknown) {
-  if (typeof window === "undefined") return;
   try { localStorage.setItem(key, JSON.stringify(data)); } catch {}
 }
 
@@ -61,7 +59,6 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | null>(null);
 
 function getAuthFromStorage(): { email: string; role: UserRole; name: string } | null {
-  if (typeof window === "undefined") return null;
   try {
     const stored = localStorage.getItem("sms_auth");
     return stored ? JSON.parse(stored) : null;
@@ -86,10 +83,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const user: AuthUser = { email: auth?.email || "", name: auth?.name || "Guest", role };
 
   const logout = () => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("sms_auth");
-      window.location.href = "/login";
-    }
+    localStorage.removeItem("sms_auth");
+    window.location.href = "/login";
   };
 
   useEffect(() => { saveToStorage("sms_students", students); }, [students]);
